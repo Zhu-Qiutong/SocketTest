@@ -2,24 +2,51 @@ import socket
 from time import sleep
 import struct
 
+
+def padding(c):
+    c = "{:.2f}".format(c)
+    c = c.zfill(6)
+    return c
+
+
 # configure socket and connect to server
 clientSocket = socket.socket()
-host = '127.0.0.2'
+host = '127.0.0.1'
 port = 25000
 clientSocket.connect((host, port))
 
 while True:
     # sending massage
+    # user_input = input("\nPLease enter the data in turn (format: 'opcode data1 data2 ...') : ")
+    # opcode = int(user_input.split()[0])
+    # data = " ".join(user_input.split()[1:])
+    #
+    #
+    # info_send = struct.pack("%ds" % (len(user_input.split())), opcode, bytes(data, "UTF-8"))
     user_input = input("\nPLease enter the data in turn (format: 'opcode data1 data2 ...') : ")
-    opcode = int(user_input.split()[0])
-    data = " ".join(user_input.split()[1:])
-    info_send = struct.pack("I%ds" % (len(user_input.split()) - 1), opcode, bytes(data, "UTF-8"))
+    data = user_input.split()
+    data = list(map(float, data))
+    data = [padding(c) for c in data]
+    data = " ".join(data)
+    info_send = struct.pack("%ds" % len(data), bytes(data, "UTF-8"))
+    # print(len(data))
     clientSocket.sendall(info_send)
 
+
     # recive massage
-    data = clientSocket.recv(1024)
-    output = bytes.decode(data)
-    print('server back: ', output)
+    data_recive = clientSocket.recv(1024).decode("UTF-8")
+    try:
+        check = int(data_recive)
+        while check == 1:
+            clientSocket.sendall(info_send)
+            data_recive = clientSocket.recv(1024).decode("UTF-8")
+            check = int(data_recive)
+            print("Trying to resend...")
+            sleep(1)
+        print("Resend succeed!")
+
+    except ValueError:
+        print('Server back: ', data_recive)
 
 
 
