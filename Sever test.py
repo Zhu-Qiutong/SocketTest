@@ -7,7 +7,7 @@ import random
 
 # create and configure socket on local host
 serverSocket = socket.socket()
-host = '127.0.0.1'
+host = '127.0.0.2'
 port = 25000  # arbitrary port
 serverSocket.bind((host, port))
 serverSocket.listen(1)
@@ -17,61 +17,56 @@ print('conected by', addr)
 
 while True:
     message = con.recv(1024)
-    int_size = struct.calcsize("6s")
-    # opcheck, output1 = struct.unpack("I", info_send[:int_size]), info_send[int_size:]
-    opcheck = struct.unpack("6s", message[:int_size])
-    opcheck = int(float(opcheck[0]))
+    op_size = struct.calcsize("I")
+    opcheck = struct.unpack("I", message[:op_size])
 
 
-    if opcheck == 1:
-        data_size = "42s"
-        data = struct.unpack(data_size, message[int_size:])
-        double_check = sys.getsizeof(data)
+    if opcheck[0] == 1:
+        data_size = struct.calcsize("6f")
+        real_len = len(message[op_size:])
 
-        br = random.randint(0, 100)  # accident
-        if br < 50:
-            double_check = 1
-            counter = 1
-            while double_check != 48:
-                con.send(bytes('1', "UTF-8"))
-                message = con.recv(1024)
-                data = struct.unpack(data_size, message[int_size:])
-                double_check = sys.getsizeof(data)
-                br = random.randint(0, 100)  # noise
-                if br < 50:
-                    double_check = 1
-                print(counter)
-                counter += 1
+        ar = random.randint(0, 100)  # accident
+        if ar < 50:
+            real_len = len(message[op_size:])*2
+            print("lost info")
 
-        print("pass")
+        while real_len != data_size:
+            con.send(bytes('1', "UTF-8"))
+            message = con.recv(1024)
+            real_len = len(message[op_size:])
+            print("Retry")
+            ar = random.randint(0, 100)  # accident
+            if ar < 50:
+                real_len = len(message[op_size:]) * 2
+
+        data_recive = struct.unpack("6f", message[op_size:])
         con.sendall(str.encode('1, 0'))
 
 
-    elif opcheck == 3:
-        data_size = "14s"
-        data = struct.unpack(data_size, message[int_size:])
-        double_check = sys.getsizeof(data)
-        # print(double_check)
-        br = random.randint(0, 100)  # noise
-        if br < 50:
-            double_check = 1
-            counter = 1
-            while double_check != 48:
-                con.send(bytes('1', "UTF-8"))
-                message = con.recv(1024)
-                data = struct.unpack(data_size, message[int_size:])
-                double_check = sys.getsizeof(data)
-                br = random.randint(0, 100)  # noise
-                if br < 50:
-                    double_check = 1
-                print(counter)
-                counter += 1
+
+    if opcheck[0] == 3:
+        data_size = struct.calcsize("2I")
+        real_len = len(message[op_size:])
+
+        ar = random.randint(0, 100)  # accident
+        if ar < 50:
+            real_len = len(message[op_size:]) * 2
+            print("lost info")
+
+        while real_len != data_size:
+            con.send(bytes('1', "UTF-8"))
+            message = con.recv(1024)
+            real_len = len(message[op_size:])
+            print("Retry")
+            ar = random.randint(0, 100)  # accident
+            if ar < 50:
+                real_len = len(message[op_size:]) * 2
 
 
-        print("pass")
-        message = bytes.decode(message)
-        message = message.split()
-        if 0 <= int(float(message[1])) <= 100 and 0 <= int(float(message[2])) <= 100:
+        data_recive = struct.unpack("2I", message[op_size:])
+
+        if 0 <= data_recive[0] <= 100 and 0 <= data_recive[1] <= 100:
             con.sendall(str.encode("\\3\\0"))
+
         else:
             con.sendall(str.encode("\\3\\1"))

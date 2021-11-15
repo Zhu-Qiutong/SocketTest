@@ -3,26 +3,29 @@ from time import sleep
 import struct
 
 
-def padding(c):
-    c = "{:.2f}".format(c)
-    c = c.zfill(6)
-    return c
-
-
 # configure socket and connect to server
 clientSocket = socket.socket()
-host = '127.0.0.1'
+host = '127.0.0.2'
 port = 25000
 clientSocket.connect((host, port))
+data_send = 0
 
 while True:
+
     user_input = input("\nPLease enter the data in turn (format: 'opcode data1 data2 ...') : ")
-    data = user_input.split()
-    data = list(map(float, data))
-    data = [padding(c) for c in data]
-    data = " ".join(data)
-    info_send = struct.pack("%ds" % len(data), bytes(data, "UTF-8"))
-    clientSocket.sendall(info_send)
+    user_input = user_input.split()
+    opcode = int(user_input[0])
+    if opcode == 1:
+        data = list(map(float, user_input[1:]))
+        data_send = struct.pack("I6f", opcode, *(i for i in data))
+        clientSocket.sendall(data_send)
+
+    elif opcode == 3:
+        data = list(map(int, user_input[1:]))
+        data_send = struct.pack("3I", opcode, *(i for i in data))
+        clientSocket.sendall(data_send)
+
+
 
 
     # recive massage
@@ -31,7 +34,7 @@ while True:
         check = int(data_recive)
         while check == 1:
             # print(check)
-            clientSocket.sendall(info_send)
+            clientSocket.sendall(data_send)
             data_recive = clientSocket.recv(1024).decode("UTF-8")
             check = int(data_recive)
             print("Trying to resend...")
