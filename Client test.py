@@ -16,20 +16,12 @@ port = 25000
 clientSocket.connect((host, port))
 
 while True:
-    # sending massage
-    # user_input = input("\nPLease enter the data in turn (format: 'opcode data1 data2 ...') : ")
-    # opcode = int(user_input.split()[0])
-    # data = " ".join(user_input.split()[1:])
-    #
-    #
-    # info_send = struct.pack("%ds" % (len(user_input.split())), opcode, bytes(data, "UTF-8"))
     user_input = input("\nPLease enter the data in turn (format: 'opcode data1 data2 ...') : ")
     data = user_input.split()
     data = list(map(float, data))
     data = [padding(c) for c in data]
     data = " ".join(data)
     info_send = struct.pack("%ds" % len(data), bytes(data, "UTF-8"))
-    # print(len(data))
     clientSocket.sendall(info_send)
 
 
@@ -38,6 +30,7 @@ while True:
     try:
         check = int(data_recive)
         while check == 1:
+            # print(check)
             clientSocket.sendall(info_send)
             data_recive = clientSocket.recv(1024).decode("UTF-8")
             check = int(data_recive)
@@ -47,11 +40,4 @@ while True:
 
     except ValueError:
         print('Server back: ', data_recive)
-
-
-
-
-
-
-
 
